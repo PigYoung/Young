@@ -1,0 +1,147 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Reflection;
+using System.Data;
+
+namespace Young.Common
+{
+    public static partial class BaseLib
+    {
+        #region 以数组形式返回一个对象的所有属性
+        /// <summary>
+        /// 以数组形式返回一个对象的所有属性
+        /// </summary>
+        /// <param name="objType"></param>
+        /// <returns></returns>
+        public static string[] getAttributes(Type objType)
+        {
+            List<string> attrs = new List<string>();
+            foreach (PropertyInfo pty in objType.GetProperties())
+            {
+                string name = pty.Name;
+                if (pty.CanRead)
+                    attrs.Add(name);
+            }
+            return attrs.ToArray();
+        }
+        #endregion
+
+        #region 将一个基类转换为继承类
+        /// <summary>
+        /// 将一个基类转换为继承类
+        /// </summary>
+        /// <param name="fromObj"></param>
+        /// <param name="toObj"></param>
+        public static void ToObject(object fromObj, object toObj)
+        {
+            string name = "";
+            object attValue = null;
+            Type fromType = fromObj.GetType();
+            Type toType = toObj.GetType();
+            PropertyInfo[] attributes = fromType.GetProperties();
+            PropertyInfo[] toAttributes = toType.GetProperties();
+            for (int i = 0; i < attributes.Length; i++)
+            {
+                name = attributes[i].Name;
+                if (attributes[i].CanRead)
+                {
+                    attValue = attributes[i].GetValue(fromObj, BindingFlags.GetProperty, null, null, null);
+                    for (int j = 0; j < toAttributes.Length; j++)
+                    {
+                        if (name != toAttributes[j].Name) continue;
+                        if (toAttributes[j].CanWrite) toAttributes[j].SetValue(toObj, attValue, BindingFlags.SetProperty, null, null, null);
+                        break;
+                    }
+                }
+            }
+        }
+
+
+        public static List<T2> ToExt<T2, T>(this List<T> objs)
+        {
+            List<T2> exts = new List<T2>();
+            ConstructorInfo ct = typeof(T2).GetConstructor(Type.EmptyTypes);
+            foreach (T obj in objs)
+            {
+                object o = ct.Invoke(null); ToObject(obj, o);
+                exts.Add((T2)o);
+            }
+            return exts;
+        }
+        #endregion
+
+        #region 将一行datarow 转化为实体对象
+        public static object ToObject(DataRow dr, Type objtype)
+        {
+            ConstructorInfo ct = objtype.GetConstructor(Type.EmptyTypes);
+            object o = ct.Invoke(null);
+            PropertyInfo[] attributes = objtype.GetProperties(); string name = "";
+            for (int i = 0; i < attributes.Length; i++)
+            {
+                name = attributes[i].Name;
+                if (attributes[i].CanRead && dr.Table.Columns.Contains(name) && !Convert.IsDBNull(dr[name]))
+                {
+                    object attValue = new object();
+                    switch (dr.Table.Columns[name].DataType.Name)
+                    {
+                        case "Boolean": attValue = Convert.ToBoolean(dr[name]); break;
+                        case "Byte": attValue = Convert.ToByte(dr[name]); break;
+                        case "Byte[]": attValue = (byte[])dr[name]; break;
+                        case "DateTime": attValue = Convert.ToDateTime(dr[name]); break;
+                        case "Decimal": attValue = Convert.ToDecimal(dr[name]); break;
+                        case "Double": attValue = Convert.ToDouble(dr[name]); break;
+                        case "Int16": attValue = Convert.ToInt16(dr[name]); break;
+                        case "Int32": attValue = Convert.ToInt32(dr[name]); break;
+                        case "Int64": attValue = Convert.ToInt64(dr[name]); break;
+                        case "SByte": attValue = Convert.ToSByte(dr[name]); break;
+                        case "Single": attValue = Convert.ToSingle(dr[name]); break;
+                        case "String": attValue = Convert.ToString(dr[name]); break;
+                        case "UInt16": attValue = Convert.ToUInt16(dr[name]); break;
+                        case "UInt32": attValue = Convert.ToUInt32(dr[name]); break;
+                        case "UInt64": attValue = Convert.ToUInt64(dr[name]); break;
+                        case "Guid": attValue = new Guid(dr[name].ToString()); break;
+                    }
+                    attributes[i].SetValue(o, attValue, BindingFlags.SetProperty, null, null, null);
+                }
+            }
+            return o;
+        }
+        public static T ToObject<T>(DataRow dr)
+        {
+            Type objtype = typeof(T);
+            ConstructorInfo ct = objtype.GetConstructor(Type.EmptyTypes);
+            T o = (T)ct.Invoke(null);
+            PropertyInfo[] attributes = objtype.GetProperties(); string name = "";
+            for (int i = 0; i < attributes.Length; i++)
+            {
+                name = attributes[i].Name;
+                if (attributes[i].CanRead && dr.Table.Columns.Contains(name) && !Convert.IsDBNull(dr[name]))
+                {
+                    object attValue = new object();
+                    switch (dr.Table.Columns[name].DataType.Name)
+                    {
+                        case "Boolean": attValue = Convert.ToBoolean(dr[name]); break;
+                        case "Byte": attValue = Convert.ToByte(dr[name]); break;
+                        case "Byte[]": attValue = (byte[])dr[name]; break;
+                        case "DateTime": attValue = Convert.ToDateTime(dr[name]); break;
+                        case "Decimal": attValue = Convert.ToDecimal(dr[name]); break;
+                        case "Double": attValue = Convert.ToDouble(dr[name]); break;
+                        case "Int16": attValue = Convert.ToInt16(dr[name]); break;
+                        case "Int32": attValue = Convert.ToInt32(dr[name]); break;
+                        case "Int64": attValue = Convert.ToInt64(dr[name]); break;
+                        case "SByte": attValue = Convert.ToSByte(dr[name]); break;
+                        case "Single": attValue = Convert.ToSingle(dr[name]); break;
+                        case "String": attValue = Convert.ToString(dr[name]); break;
+                        case "UInt16": attValue = Convert.ToUInt16(dr[name]); break;
+                        case "UInt32": attValue = Convert.ToUInt32(dr[name]); break;
+                        case "UInt64": attValue = Convert.ToUInt64(dr[name]); break;
+                    }
+                    attributes[i].SetValue(o, attValue, BindingFlags.SetProperty, null, null, null);
+                }
+            }
+            return o;
+        }
+        #endregion
+    }
+}
